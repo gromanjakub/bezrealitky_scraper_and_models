@@ -62,6 +62,7 @@ def pocet_stranek():
 
 
 def ziskani_inzeratu_a_obsahu():
+    index = 1
     global inzeraty 
     for x in range(1, 3):  # misto cisla pak pocetstranek
         web = ("https://www.bezrealitky.cz/vypis/nabidka-prodej/byt?page=" + str(x))
@@ -96,6 +97,7 @@ def ziskani_inzeratu_a_obsahu():
         inzeraty = [(link + odkaz) for odkaz in odkazy]
 
         # PRO INZERÁTY
+        
         for inzerat in inzeraty:
             # zde získám obsah 1. inzerátů na aktuální stránce
             get_inzerat = requests.get(inzerat)
@@ -146,7 +148,8 @@ def ziskani_inzeratu_a_obsahu():
                     #print(pepa)
                     #print("jdu na dalsi u")
                     #print("jdu na dalsi inzerat_________")
-            
+            pepa.append("/home/kub/projects/bezrealitky/fotky/" + str(index))
+            index += 1
             insert_parametry.append(pepa)
             # print(insert_parametry)
             
@@ -154,7 +157,7 @@ def ziskani_inzeratu_a_obsahu():
 
 def zapis_do_csv():
     # tohle pak oživím až bude třeba dát output do csv
-    with open("/home/kub/csv_parametru.csv", "w", newline="") as f:
+    with open("/home/kub/projects/bezrealitky/csv_parametru.csv", "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerows(insert_parametry)
 
@@ -201,7 +204,9 @@ def stahovani_obrazku():
                 if "https" in item:
                     if "thumb" not in item:  # z nějakého fascinujícího důvodu mi nefunguje kombinování více podmínek, dává mi to tam ty krátké odkazy
                         cisty_list_img.append(item)
+        #print(cisty_list_img)
         konecny_list_img.append(cisty_list_img)
+        #print(konecny_list_img)
 
 
 
@@ -219,10 +224,39 @@ def filtr_fotek():
 def ukladani_fotek():
     # pomocný list na tvoření jmen souborů co stáhnu
     a = 1
+    #for b in cisty_list_img:
+    len_kon_list_img = 0      
+    for element in konecny_list_img:
+        len_kon_list_img += len(element)
+    
+    
+    parent_dir = "/home/kub/projects/bezrealitky/fotky"
+    
+    
+      
+    
+    for inzerat in konecny_list_img:  # tady stahuju jednotlivé obrázky
+        directory = str(a)
+        path = os.path.join(parent_dir, directory)
+        try:
+            os.mkdir(path)
+        except FileExistsError:
+            pass  
+        pocet_fotek_inzeratu = list(range(len(inzerat)))
+
+        for obrazek in inzerat:
+            cislo = inzerat.index(obrazek)
+            # neumí to vytvořit obrázek když tam je celý odkaz z obrázku, tak musím nejdřív udělat list jmen a ty pak použít
+            #print("cislo je " + str(cislo))
+            adresa = "/home/kub/fefe/"  + str(a) + "/" + str(pocet_fotek_inzeratu[cislo]) +  ".jpeg" #
+            urllib.request.urlretrieve(obrazek, adresa)
+        a+=1
+
+def ukladani_fotek_stare():
+    # pomocný list na tvoření jmen souborů co stáhnu
+    a = 1
     #for b in cisty_list_img:    
     ffr = list(range(len(cisty_list_img)))
-    
-    
     parent_dir = "/home/kub/fefe/"
     directory = str(a)
     path = os.path.join(parent_dir, directory)
@@ -235,12 +269,10 @@ def ukladani_fotek():
         
         cislo = cisty_list_img.index(obrazek)
         # neumí to vytvořit obrázek když tam je celý odkaz z obrázku, tak musím nejdřív udělat list jmen a ty pak použít
-        print("cislo je " + str(cislo))
+        #print("cislo je " + str(cislo))
         adresa = "/home/kub/fefe/"  + str(a) + "/" + str(ffr[cislo]) +  ".jpeg" #
         urllib.request.urlretrieve(obrazek, adresa)
     a+=1
-
-
 
 def save_to_sql():
     conn = sqlite3.connect('SQLite_Bezrealitky.db')
@@ -269,11 +301,12 @@ def save_to_sql():
                                                                     Vytah          BLOB,
                                                                     Garaz          BLOB,
                                                                     K dispozici od BLOB,
-                                                                    Rekonstrukce   BLOB
+                                                                    Rekonstrukce   BLOB,
+                                                                    Odkaz fotky    BLOB
                                                                     )''')
    
     for a in insert_parametry:
-        cursor.executemany("INSERT INTO  tab_parametry VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ?, ?, ?, ?, ?)", [a])
+        cursor.executemany("INSERT INTO  tab_parametry VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ?, ?, ?, ?, ?, ?)", [a])
 
         
 
@@ -289,8 +322,8 @@ def save_to_sql():
 get_links()
 pocet_stranek()
 ziskani_inzeratu_a_obsahu()
-#zapis_do_csv()
-#save_to_sql()
+zapis_do_csv()
+save_to_sql()
 print("Stahuju obrazky")
 stahovani_obrazku()
 #filtr_fotek()
