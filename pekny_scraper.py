@@ -41,7 +41,7 @@ stranky_list = []
 seznam_parametru = []
 stranky_pomoc = []
 insert_parametry = []
-pepa = []
+aktualni_inzerat = []
 
 
 def get_links():
@@ -64,7 +64,9 @@ def pocet_stranek():
     if len(stranky_list) < 1:
         raise Exception("len stranky_list < 1")
     # vezmu předposlední link na stránku (poslední je "next"), vezmu to za =, range funkce jde do x-1
+    global pocetstranek
     pocetstranek = int(stranky_list[-2].split("=")[1])+1
+    print("pocetz stranek je " + str(pocetstranek))
 
 
 def ziskani_inzeratu_a_obsahu():
@@ -141,24 +143,26 @@ def ziskani_inzeratu_a_obsahu():
             #jmena_parametry_inzeratu = jmena_parametry_inzeratu[1:]
 
             # print(insert_parametry)
-            global pepa
-            pepa = []
+            global aktualni_inzerat
+            aktualni_inzerat = []
             for u in jmena_parametru_global:
                 if u in jmena_parametry_inzeratu:
                     #print(u +  " je v jmena_parametry_inzeratu")
-                    pepa.append(parametry[jmena_parametry_inzeratu.index(u)])
-                    # print(pepa)
+                    aktualni_inzerat.append(
+                        parametry[jmena_parametry_inzeratu.index(u)])
+                    # print(aktualni_inzerat)
                 else:
                     #print(u + " neni v jmena_parametry_inzeratu")
-                    pepa.append("-")
-                    # print(pepa)
+                    aktualni_inzerat.append("-")
+                    # print(aktualni_inzerat)
                     #print("jdu na dalsi u")
                     #print("jdu na dalsi inzerat_________")
-            pepa.append("/home/kub/projects/bezrealitky/fotky/" + str(index))
-            pepa.append(datum)
-            pepa.append(" ")
+            aktualni_inzerat.append(
+                "/home/kub/projects/bezrealitky/fotky/" + str(index))
+            aktualni_inzerat.append(datum)
+            aktualni_inzerat.append(" ")
             index += 1
-            insert_parametry.append(pepa)
+            insert_parametry.append(aktualni_inzerat)
             # print(insert_parametry)
 
 
@@ -215,9 +219,7 @@ def stahovani_obrazku():
                 if "https" in item:
                     if "thumb" not in item:  # z nějakého fascinujícího důvodu mi nefunguje kombinování více podmínek, dává mi to tam ty krátké odkazy
                         cisty_list_img.append(item)
-        # print(cisty_list_img)
         konecny_list_img.append(cisty_list_img)
-        # print(konecny_list_img)
 
 
 def filtr_fotek():
@@ -233,7 +235,6 @@ def filtr_fotek():
 def ukladani_fotek():
     # pomocný list na tvoření jmen souborů co stáhnu
     a = 1
-    # for b in cisty_list_img:
     len_kon_list_img = 0
     for element in konecny_list_img:
         len_kon_list_img += len(element)
@@ -252,7 +253,6 @@ def ukladani_fotek():
         for obrazek in inzerat:
             cislo = inzerat.index(obrazek)
             # neumí to vytvořit obrázek když tam je celý odkaz z obrázku, tak musím nejdřív udělat list jmen a ty pak použít
-            #print("cislo je " + str(cislo))
             adresa = "/home/kub/fefe/" + \
                 str(a) + "/" + str(pocet_fotek_inzeratu[cislo]) + ".jpeg"
             urllib.request.urlretrieve(obrazek, adresa)
@@ -262,7 +262,6 @@ def ukladani_fotek():
 def ukladani_fotek_stare():
     # pomocný list na tvoření jmen souborů co stáhnu
     a = 1
-    # for b in cisty_list_img:
     ffr = list(range(len(cisty_list_img)))
     parent_dir = "/home/kub/fefe/"
     directory = str(a)
@@ -276,7 +275,6 @@ def ukladani_fotek_stare():
 
         cislo = cisty_list_img.index(obrazek)
         # neumí to vytvořit obrázek když tam je celý odkaz z obrázku, tak musím nejdřív udělat list jmen a ty pak použít
-        #print("cislo je " + str(cislo))
         adresa = "/home/kub/fefe/" + str(a) + "/" + str(ffr[cislo]) + ".jpeg"
         urllib.request.urlretrieve(obrazek, adresa)
     a += 1
@@ -324,23 +322,12 @@ def save_to_sql():
         print("a[0] je ")
         print(a[0])
 
-        
-        # dava none (false) když to nic nenajde, ergo "pokud true"
-        """
-        if not (cursor.execute("SELECT EXISTS(SELECT Cislo_inzeratu FROM tab_parametry WHERE Cislo_inzeratu = (?))", (a[0],))):
-            print(a[0])
-            print("Inzerat už v databázi je")
-            """
-    
         if a[0] in id_v_db_ciste:
-          print("Inzerat už v databázi je")  
+            print("Inzerat už v databázi je")
         else:
             cursor.executemany(
                 "INSERT INTO  tab_parametry VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ?, ?, ?, ?, ?, ?, ?, ?)", [a])
             print("Inzerát přidán")
-# JE TŘEBA PŘIDAT FUNKCI KTERÁ PROJEDE ID V DATABÁZI A POKUD TO (PRO (KAŽDÝ PRVEK ID) IN (PRVNÍ PRVEK LISTŮ))
-#  NENAJDE V PRVNÍM PRVKU LISTU LISTŮ PARAMETRŮ, POTOM TO HODÍ AKTUÁLNÍ ČAS
-# ? UDĚLAT NOVOU FUNKCI KTERÁ NEJDŘÍV ZCHECKNE TEN ČAS A PŘIDÁ ČAS KDY INZERÁT ZMIZEL
 
     print("vlozeno")
     cursor.execute("SELECT * FROM tab_parametry")
@@ -358,33 +345,26 @@ def datum_odebrani():
     id_v_db = list(cursor.execute("SELECT Cislo_inzeratu from tab_parametry"))
     print("id_v_db:")
     print(id_v_db)
+
     id_v_db_ciste = []
     for id in id_v_db:
         id_v_db_ciste.append(id[0])
     print(id_v_db_ciste)
-    #cislo = ("685199",)
-    #cislo2 = str(cislo)
-    #print("cislo strip " + cislo2.strip())
-    #print("cislo[0] " + cislo[0])
-    #if (cislo[0] in id_v_db[0]):
-    #    print("JEEEEEEEEEEE")
-    #else:
-    #    print("NENIIIIIIIIII")
+
     a = 0
-    #
-    #cursor.execute("ALTER TABLE tab_parametry ADD Datum_odebrani BLOB")
+
     print("id v db ciste je:")
     print(id_v_db_ciste)
     for inzerat in insert_parametry:
-        #for id in id_v_db_ciste:
         if inzerat[0] in id_v_db_ciste:
-            #print("je " + id_v_db_ciste[a])
-            cursor.execute("""UPDATE tab_parametry SET Datum_odebrani = ? WHERE Cislo_inzeratu = ?""", ("-", id_v_db_ciste[a]))
-        else:   
+            cursor.execute(
+                """UPDATE tab_parametry SET Datum_odebrani = ? WHERE Cislo_inzeratu = ?""", ("-", id_v_db_ciste[a]))
+        else:
             print(str(id_v_db_ciste[a]) + "neni")
-            cursor.execute("""UPDATE tab_parametry SET Datum_odebrani = (?) WHERE Cislo_inzeratu = (?)""", (datum, id_v_db_ciste[a]))
+            cursor.execute(
+                """UPDATE tab_parametry SET Datum_odebrani = (?) WHERE Cislo_inzeratu = (?)""", (datum, id_v_db_ciste[a]))
         print(a)
-        a+=1
+        a += 1
     conn.commit()
     conn.close()
 
